@@ -1,7 +1,10 @@
 use anyhow::Result;
-use slint::ComponentHandle;
+use slint::{ComponentHandle, Timer, TimerMode};
 use url::Url;
-use wry::{Rect, WebView, WebViewBuilder, dpi::{LogicalSize, Position}};
+use wry::{
+    dpi::{LogicalSize, Position},
+    Rect, WebView, WebViewBuilder, Error as WryError,
+};
 
 slint::include_modules!();
 
@@ -45,50 +48,61 @@ fn main() -> Result<()> {
 
 	app.show()?;
 
+	let chrome_h:f64 = 40.0;
+
 	use std::{cell::RefCell, rc::Rc};
 	let webview_cell: Rc<RefCell<Option<WebView>>> = Rc::new(RefCell::new(None));
 
-    // CHANGED: defer WebView creation to "soon after loop start" for macOS robustness.
+	let init_timer: &'static Timer = Box::leak(Box::new(Timer::default()));
+    let resize_timer: &'static Timer = Box::leak(Box::new(Timer::default()));
     {
         let weak = app.as_weak();
         let webview_cell = webview_cell.clone();
 
-        let init = slint::Timer::default();
         println!("start initialization of webView");
-        init.start(
-            slint::TimerMode::SingleShot,
-            std::time::Duration::from_millis(0),
+        init_timer.start(
+            TimerMode::Repeated,
+            std::time::Duration::from_millis(25),
             move || {
-                if let Some(app) = weak.upgrade() {
-                    let window = app.window();
+                let Some(app) = weak.upgrade() else { return; };
+                let win = app.window();
 
-                    // Slint's handle already implements HasWindowHandle + HasDisplayHandle.
-                    // No wrapper type needed.
-                    let handle = window.window_handle();
+                let sf = win.scale_factor() as f64;
+                let phys = win.size();
+                if phys.width == 0 || phys.height == 0 || sf == 0.0 {
+                    return;
+                }
 
-                    // Compute logical (point) size for wry (Retina safe).
-                    let sf = window.scale_factor() as f64;
-                    let phys = window.size(); // physical pixels
-                    let chrome_h = 40.0;      // keep in sync with your Slint top bar height
-                    let logical = LogicalSize::new(
-                        phys.width as f64 / sf,
-                        phys.height as f64 / sf - chrome_h,
-                    );
+                let w = phys.width as f64 / sf;
+                let h = phys.height as f64 / sf - chrome_h;
 
-                    // Build a child WKWebView positioned under the 40px bar.
-                    let wv = WebViewBuilder::new()
-                        // .with_url(&app.get_url())
-                        .with_html("<html><body><h1>It works</h1></body></html>")
-                        .with_bounds(Rect {
-                            position: Position::Logical((0.0, chrome_h).into()),
-                            size: logical.into(),
-                        })
-                        .build_as_child(&handle)
-                        .expect("build_as_child failed");
+                let mut start = app.get_url().to_string();
+                if start.trim().is_empty() {
+                    start = "https://abghim.github.io".to_string();
+                    app.set_url(start.clone().into());
+                }
+                let start = canonicalize(&start);
 
-                    println!("Webview created");
+                let handle = win.window_handle();
 
-                    *webview_cell.borrow_mut() = Some(wv);
+                match WebViewBuilder::new()
+                    .with_url(&start)
+                    .with_bounds(Rect {
+                        position: Position::Logical((0.0, chrome_h).into()),
+                        size: LogicalSize::new(w, h).into(),
+                    })
+                    .build_as_child(&handle)
+                {
+                    Ok(wv) => {
+                        println!("Webview created");
+                        *webview_cell.borrow_mut() = Some(wv);
+                        init_timer.stop();
+                    }
+                    Err(WryError::WindowHandleError(_)) => {
+                    }
+                    Err(e) => {
+                        eprintln!("[init] build_as_child failed (retrying): {e}");
+                    }
                 }
             },
         );
@@ -115,8 +129,8 @@ fn main() -> Result<()> {
     	println!("Resize timer started");
         let weak = app.as_weak();
         let webview_cell = webview_cell.clone();
-        let resize = slint::Timer::default();
-        resize.start(
+
+        resize_timer.start(
             slint::TimerMode::Repeated,
             std::time::Duration::from_millis(100),
             move || {
