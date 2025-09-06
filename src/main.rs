@@ -44,7 +44,6 @@ fn main() -> Result<()> {
 	}
 
 	let app = Browser::new()?;
-	println!("Made app");
 
 	app.show()?;
 
@@ -59,7 +58,6 @@ fn main() -> Result<()> {
         let weak = app.as_weak();
         let webview_cell = webview_cell.clone();
 
-        println!("start initialization of webView");
         init_timer.start(
             TimerMode::Repeated,
             std::time::Duration::from_millis(25),
@@ -94,7 +92,6 @@ fn main() -> Result<()> {
                     .build_as_child(&handle)
                 {
                     Ok(wv) => {
-                        println!("Webview created");
                         *webview_cell.borrow_mut() = Some(wv);
                         init_timer.stop();
                     }
@@ -109,7 +106,6 @@ fn main() -> Result<()> {
     }
 
     {
-    	println!("Go callback definition");
 		let weak = app.as_weak();
 	    let webview_cell = webview_cell.clone();
 		app.on_go(
@@ -150,7 +146,6 @@ fn main() -> Result<()> {
         );
     }
 
-    println!("Starting event loop");
 
     slint::run_event_loop()?;
 	Ok(())
