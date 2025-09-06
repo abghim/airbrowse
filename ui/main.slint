@@ -1,7 +1,7 @@
 import { LineEdit } from "std-widgets.slint";
 
 export component Browser inherits Window {
-	in-out property <string> url;
+	in-out property <string> url: "https://abghim.github.io";
 	callback go(string);
 
 	VerticalLayout {
@@ -21,7 +21,6 @@ export component Browser inherits Window {
 		}
 
 		Rectangle {
-			height: root.height - 40px;
 			background: #000000;
 		}
 	}
