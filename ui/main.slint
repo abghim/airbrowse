@@ -4,8 +4,16 @@ export component Browser inherits Window {
 	in-out property <string> url: "https://abghim.github.io";
 	callback go(string);
 
- 	width: 1000px;
-  	height: 700px;
+	title: "airBrowse";
+ 	preferred-width: 1440px;
+  	preferred-height: 844px;
+
+  	max-width: 1440px;
+   	max-height: 844px;
+
+
+   	min-width: 720px;
+    min-height: 400px;
 
 	VerticalLayout {
 		Rectangle {
