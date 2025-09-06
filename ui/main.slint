@@ -1,3 +1,28 @@
 import { LineEdit } from "std-widgets.slint";
 
-export component Browser inherits Window { }
+export component Browser inherits Window {
+	in-out property <string> url;
+	callback go(string);
+
+	VerticalLayout {
+		Rectangle {
+			height: 40px;
+			Rectangle {
+				x: 8px; y: 6px; width: parent.width - 16px; height: parent.height - 12px;
+				LineEdit {
+					text: root.url;
+					placeholder-text: "Url or search query";
+					accepted => {
+						root.url = self.text;
+						root.go(self.text);
+					}
+				}
+			}
+		}
+
+		Rectangle {
+			height: root.height - 40px;
+			background: #000000;
+		}
+	}
+}
