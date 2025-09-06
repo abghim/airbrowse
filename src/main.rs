@@ -86,9 +86,6 @@ fn main() -> Result<()> {
                         .build_as_child(&handle)
                         .expect("build_as_child failed");
 
-
-                    let _ = wv.focus();
-
                     println!("Webview created");
 
                     *webview_cell.borrow_mut() = Some(wv);
