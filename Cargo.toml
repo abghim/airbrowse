@@ -1,0 +1,18 @@
+[package]
+name = "test-brow"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1"
+url = "2.5.7"
+urlencoding = "2.1.3"
+
+slint = { version = "1.13", features = ["backend-winit", "raw-window-handle-06"] }
+
+wry = { version = "0.53.3" }
+
+[build-dependencies]
+slint-build = "1.13"
+
+
