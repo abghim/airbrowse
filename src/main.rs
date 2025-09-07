@@ -45,6 +45,8 @@ fn main() -> Result<()> {
 
 	let app = Browser::new()?;
 
+	app.window().set_maximized(true);
+
 	app.show()?;
 
 	let chrome_h:f64 = 40.0;
@@ -60,7 +62,7 @@ fn main() -> Result<()> {
 
         init_timer.start(
             TimerMode::Repeated,
-            std::time::Duration::from_millis(25),
+            std::time::Duration::from_millis(5),
             move || {
                 let Some(app) = weak.upgrade() else { return; };
                 let win = app.window();
@@ -128,7 +130,7 @@ fn main() -> Result<()> {
 
         resize_timer.start(
             slint::TimerMode::Repeated,
-            std::time::Duration::from_millis(100),
+            std::time::Duration::from_millis(1),
             move || {
                 if let (Some(app), Some(wv)) = (weak.upgrade(), webview_cell.borrow().as_ref()) {
                     let w = app.window();

@@ -14,3 +14,10 @@ wry = { version = "0.53.3" }
 
 [build-dependencies]
 slint-build = "1.13"
+
+
+[package.metadata.bundle]
+name        = "airBrowse"
+identifier  = "com.airbrowse.app"
+icon        = ["icon.png"]
+category    = "public.app-category.developer-tools"
