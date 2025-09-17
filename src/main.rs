@@ -2,8 +2,8 @@ use anyhow::Result;
 use slint::{ComponentHandle, Timer, TimerMode};
 use url::Url;
 use wry::{
+    Error as WryError, Rect, WebView, WebViewBuilder,
     dpi::{LogicalSize, Position},
-    Rect, WebView, WebViewBuilder, Error as WryError,
 };
 
 slint::include_modules!();
@@ -23,7 +23,6 @@ slint::include_modules!();
 //     }
 // }
 
-
 fn canonicalize(input: &str) -> String {
     let s = input.trim();
     if s.is_empty() {
@@ -39,22 +38,22 @@ fn canonicalize(input: &str) -> String {
 }
 
 fn main() -> Result<()> {
-	unsafe {
-		std::env::set_var("SLINT_BACKEND", "winit-femtovg");
-	}
+    unsafe {
+        std::env::set_var("SLINT_BACKEND", "winit-femtovg");
+    }
 
-	let app = Browser::new()?;
+    let app = Browser::new()?;
 
-	app.window().set_maximized(true);
+    app.window().set_maximized(true);
 
-	app.show()?;
+    app.show()?;
 
-	let chrome_h:f64 = 40.0;
+    let chrome_h: f64 = 40.0;
 
-	use std::{cell::RefCell, rc::Rc};
-	let webview_cell: Rc<RefCell<Option<WebView>>> = Rc::new(RefCell::new(None));
+    use std::{cell::RefCell, rc::Rc};
+    let webview_cell: Rc<RefCell<Option<WebView>>> = Rc::new(RefCell::new(None));
 
-	let init_timer: &'static Timer = Box::leak(Box::new(Timer::default()));
+    let init_timer: &'static Timer = Box::leak(Box::new(Timer::default()));
     let resize_timer: &'static Timer = Box::leak(Box::new(Timer::default()));
     {
         let weak = app.as_weak();
@@ -64,7 +63,9 @@ fn main() -> Result<()> {
             TimerMode::Repeated,
             std::time::Duration::from_millis(5),
             move || {
-                let Some(app) = weak.upgrade() else { return; };
+                let Some(app) = weak.upgrade() else {
+                    return;
+                };
                 let win = app.window();
 
                 let sf = win.scale_factor() as f64;
@@ -91,14 +92,14 @@ fn main() -> Result<()> {
                         position: Position::Logical((0.0, chrome_h).into()),
                         size: LogicalSize::new(w, h).into(),
                     })
+                    .with_incognito(true)
                     .build_as_child(&handle)
                 {
                     Ok(wv) => {
                         *webview_cell.borrow_mut() = Some(wv);
                         init_timer.stop();
                     }
-                    Err(WryError::WindowHandleError(_)) => {
-                    }
+                    Err(WryError::WindowHandleError(_)) => {}
                     Err(e) => {
                         eprintln!("[init] build_as_child failed (retrying): {e}");
                     }
@@ -108,23 +109,21 @@ fn main() -> Result<()> {
     }
 
     {
-		let weak = app.as_weak();
-	    let webview_cell = webview_cell.clone();
-		app.on_go(
-			move |typed| {
-				let target = canonicalize(&typed);
-    			if let Some(wv) = webview_cell.borrow().as_ref() {
-                	let _ = wv.load_url(&target);
-            	}
-				if let Some(appl) = weak.upgrade() {
-					appl.set_url(target.into());
-				}
-			}
-		);
+        let weak = app.as_weak();
+        let webview_cell = webview_cell.clone();
+        app.on_go(move |typed| {
+            let target = canonicalize(&typed);
+            if let Some(wv) = webview_cell.borrow().as_ref() {
+                let _ = wv.load_url(&target);
+            }
+            if let Some(appl) = weak.upgrade() {
+                appl.set_url(target.into());
+            }
+        });
     }
 
     {
-    	println!("Resize timer started");
+        println!("Resize timer started");
         let weak = app.as_weak();
         let webview_cell = webview_cell.clone();
 
@@ -148,7 +147,6 @@ fn main() -> Result<()> {
         );
     }
 
-
     slint::run_event_loop()?;
-	Ok(())
+    Ok(())
 }
